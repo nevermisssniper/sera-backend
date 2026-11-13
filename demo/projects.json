@@ -1,0 +1,20 @@
+[
+  {
+    "id": "sera-backend",
+    "name": "Sera Engine",
+    "category": "Applications",
+    "headline": "Make every job inspectable.",
+    "description": "Walk through a generation job and see where authentication, training and delivery fit.",
+    "mode": "engine",
+    "maturity": "Existing service",
+    "disclosure": "Deterministic job-state simulation; no worker is running.",
+    "features": [
+      "Failure scenarios",
+      "Job timeline",
+      "Request manifest"
+    ],
+    "remaining": "Real GPU training, model dependencies and callback delivery need deployment smoke tests.",
+    "number": "05",
+    "repo": "https://github.com/nevermisssniper/sera-backend"
+  }
+]

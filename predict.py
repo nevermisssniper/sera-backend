@@ -17,18 +17,16 @@ def run_training(
 ) -> str:
     """Main training function without Cog dependencies"""
     
-    # Existing data handling logic
-    instance_data_dir = "/src/instance_images"
-    if os.path.isdir(instance_data):
-        instance_data_dir = str(instance_data)
-    else:
-        # Ensure the extraction directory exists
-        os.makedirs(instance_data_dir, exist_ok=True)
-        subprocess.run(["unzip", "-o", instance_data, "-d", instance_data_dir], check=True)
-        for folder in glob.glob(os.path.join(instance_data_dir, "*/")):
-            subprocess.run(["mv", f"{folder}*", instance_data_dir], check=True)
-            subprocess.run(["rm", "-r", folder], check=True)
-        instance_data_dir = "/src/instance_images"
+    # Each job trains directly on its private directory. Shared /src paths
+    # leak images between jobs and the static concepts file overrides inputs.
+    if not os.path.isdir(instance_data):
+        raise ValueError("instance_data must be a job-local image directory")
+    instance_data_dir = os.path.abspath(instance_data)
+    class_data_dir = os.path.join(output_dir, "class_images")
+    os.makedirs(class_data_dir, exist_ok=True)
+    for image in glob.glob(os.path.join(os.path.dirname(__file__), "class_images", "*")):
+        if os.path.isfile(image):
+            shutil.copy2(image, class_data_dir)
 
     cmd = [
         "python", "dreambooth/train_dreambooth.py",
@@ -51,7 +49,8 @@ def run_training(
         f"--max_train_steps={steps}",
         f"--output_dir={output_dir}",
         "--save_interval=400",
-        "--concepts_list=dreambooth/concepts_list.json",
+        f"--class_data_dir={class_data_dir}",
+        "--class_prompt=photo of a person",
         f"--instance_data_dir={instance_data_dir}",
         f"--instance_prompt={instance_prompt}",
     ]
@@ -67,4 +66,5 @@ def run_training(
             cmd.append(f"--save_sample_negative_prompt={sample_negative_prompt}")
 
     subprocess.run(cmd, check=True)
-    return f"Training complete. Model saved at {output_dir}/"
+    return os.path.join(output_dir, str(steps), "samples")
+
